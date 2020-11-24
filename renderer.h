@@ -39,6 +39,7 @@ private:
     QVector3D _min;
     QVector3D _max;
     std::vector<QVector3D> _points;
+    std::vector<QVector3D> _colors;
     std::vector<QVector3D> _pointsScreen;
     std::vector<unsigned int> _indexPoints;
 
@@ -46,9 +47,11 @@ private:
     //Parte do GBuffer
     unsigned int _gBuffer;
     unsigned int _gSeeds;
+    unsigned int _gColors;
     unsigned int _gSeeds2;
 
     unsigned int _pointsBuffer = static_cast<unsigned int>(-1);
+    unsigned int _colorsBuffer = static_cast<unsigned int>(-1);
     unsigned int _pointsScreenBuffer = static_cast<unsigned int>(-1);
     unsigned int _meshBuffer = static_cast<unsigned int>(-1);
 

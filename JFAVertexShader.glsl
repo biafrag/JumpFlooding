@@ -1,6 +1,6 @@
 #version 410 core
 
-layout (location = 1) in vec3 vPos; //Posição dos vértices do quadrilátero
+layout (location = 2) in vec3 vPos; //Posição dos vértices do quadrilátero
 out vec2 UV; //Coordenadas de textura do quad
 uniform mat4 mvp; //Matriz model view projection
 

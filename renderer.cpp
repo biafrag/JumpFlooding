@@ -119,11 +119,6 @@ void Renderer::resizeGL(int w, int h)
 void Renderer::paintGL()
 {
 
-    float w,h;
-    //Como estou começando do 0
-    w = _max.x() - _min.x();
-    h = _max.y() - _min.y();
-
      //PRIMEIRA PASSADA
      _programGB->bind();
      _vao.bind();
@@ -145,7 +140,7 @@ void Renderer::paintGL()
      glDrawElements(GL_POINTS, static_cast<GLsizei>(_indexPoints.size()), GL_UNSIGNED_INT, nullptr);
 
 //     glBindFramebuffer(GL_FRAMEBUFFER, _gBuffer);
-//     glReadBuffer(GL_COLOR_ATTACHMENT0);
+//     glReadBuffer(GL_COLOR_ATTACHMENT2);
 //     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 //     glBlitFramebuffer(0, 0,  width(), height(),
 //                       0, 0, width(), height(),
@@ -153,30 +148,58 @@ void Renderer::paintGL()
 
 //     return;
 
+
      //Passada do JFA
      _programJFA->bind();
      _vao2.bind();
-     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-     glViewport(0, 0, width(), height());
-     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+     //glBindFramebuffer(GL_FRAMEBUFFER, _gBuffer);
+     //glViewport(0, 0, width(), height());
+     //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-     //Ativar e linkar a textura de tangente
-     glActiveTexture(GL_TEXTURE0);
-     glBindTexture(GL_TEXTURE_2D, _gSeeds);
-     unsigned int gSeedsLocation = glGetUniformLocation(_programJFA->programId(), "gSeeds");
-     glUniform1i(gSeedsLocation, 0);
+     int gSeedsLocationRead = 1;
+     unsigned int gSeedsLocation;
+     //for(int i = 0; i < 1; i++)
+     {
+         _programJFA->setUniformValue("read", gSeedsLocationRead);
 
-     glDrawArrays(GL_TRIANGLES, 0, (int)_pointsScreen.size());
+         //Ativar e linkar a textura de tangente
+         glActiveTexture(GL_TEXTURE0);
+         glBindTexture(GL_TEXTURE_2D, _gSeeds);
+         gSeedsLocation = glGetUniformLocation(_programJFA->programId(), "gSeedsSampler");
+         glUniform1i(gSeedsLocation, 0);
+
+//         glActiveTexture(GL_TEXTURE1);
+//         glBindTexture(GL_TEXTURE_2D, _gSeeds2);
+//         gSeedsLocation = glGetUniformLocation(_programJFA->programId(), "gSeedsSampler2");
+//         glUniform1i(gSeedsLocation, 1);
+
+//         glActiveTexture(GL_TEXTURE1);
+//         glBindTexture(GL_TEXTURE_2D, _gColors);
+//         unsigned int gColorsLocation = glGetUniformLocation(_programJFA->programId(), "gColors");
+//         glUniform1i(gColorsLocation, 1);
+
+         glDrawArrays(GL_TRIANGLES, 0, (int)_pointsScreen.size());
+
+         if(gSeedsLocationRead == 1)
+         {
+             gSeedsLocationRead = 2;
+         }
+         else
+         {
+             gSeedsLocationRead = 1;
+         }
+     }
 
 
-//          glBindFramebuffer(GL_FRAMEBUFFER, _gBuffer);
-//          glReadBuffer(GL_COLOR_ATTACHMENT1);
-//          glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-//          glBlitFramebuffer(0, 0,  width(), height(),
-//                            0, 0, width(), height(),
-//                            GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
-//          return;
+          glBindFramebuffer(GL_FRAMEBUFFER, _gBuffer);
+          glReadBuffer(GL_COLOR_ATTACHMENT1);
+          glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+          glBlitFramebuffer(0, 0,  width(), height(),
+                            0, 0, width(), height(),
+                            GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+          return;
 
       //SEGUNDA PASSADA
      //Dando bind no programa e no vao
@@ -247,6 +270,12 @@ void Renderer::createVAO()
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
         glEnableVertexAttribArray(0);
 
+        //Criando buffer de pontos dos vértices
+        glGenBuffers(1, &_colorsBuffer);
+        glBindBuffer(GL_ARRAY_BUFFER, _colorsBuffer);
+        glBufferData(GL_ARRAY_BUFFER, _colors.size()*sizeof(QVector3D), &_colors[0], GL_STATIC_DRAW);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+        glEnableVertexAttribArray(1);
 
         //Criando buffers de indexPoints
         glGenBuffers(1, &_meshBuffer);
@@ -268,8 +297,8 @@ void Renderer::createVAO2()
     glGenBuffers(1, &_pointsScreenBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, _pointsScreenBuffer);
     glBufferData(GL_ARRAY_BUFFER, _pointsScreen.size()*sizeof(QVector3D), &_pointsScreen[0], GL_STATIC_DRAW);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
-    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+    glEnableVertexAttribArray(2);
 }
 
 
@@ -280,29 +309,31 @@ void Renderer::createFrameBuffer()
         glGenFramebuffers(1, &_gBuffer);
         glBindFramebuffer(GL_FRAMEBUFFER, _gBuffer);
 
-        float w,h;
-
-        //Como estou começando do 0
-        w = _max.x() - _min.x();
-        h = _max.y() - _min.y();
         // - Buffer de Posição
         glGenTextures(1, &_gSeeds);
         glBindTexture(GL_TEXTURE_2D, _gSeeds);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width() , height(), 0, GL_RGB, GL_FLOAT, NULL);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width() , height(), 0, GL_RGB, GL_FLOAT, NULL);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _gSeeds, 0);
 
+        glGenTextures(1, &_gColors);
+        glBindTexture(GL_TEXTURE_2D, _gColors);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width() , height(), 0, GL_RGB, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, _gColors, 0);
+
 
         glGenTextures(1, &_gSeeds2);
         glBindTexture(GL_TEXTURE_2D, _gSeeds2);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width() , height(), 0, GL_RGB, GL_FLOAT, NULL);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width() , height(), 0, GL_RGB, GL_FLOAT, NULL);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, _gSeeds2, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, _gSeeds2, 0);
 
-        unsigned int attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
-        glDrawBuffers(2, attachments);
+        unsigned int attachments[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
+        glDrawBuffers(3, attachments);
 
 
         if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
@@ -316,14 +347,15 @@ void Renderer::createFrameBuffer()
 void Renderer::updateFrameBuffer()
 {
     glBindFramebuffer(GL_FRAMEBUFFER, _gBuffer);
-    float w,h;
-    w = _max.x() - _min.x();
-    h = _max.y() - _min.y();
+
     glBindTexture(GL_TEXTURE_2D, _gSeeds);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width() , height(), 0, GL_RGB, GL_FLOAT, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width() , height(), 0, GL_RGB, GL_FLOAT, NULL);
 
     glBindTexture(GL_TEXTURE_2D, _gSeeds2);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width() , height(), 0, GL_RGB, GL_FLOAT, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width() , height(), 0, GL_RGB, GL_FLOAT, NULL);
+
+    glBindTexture(GL_TEXTURE_2D, _gColors);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width() , height(), 0, GL_RGB, GL_FLOAT, NULL);
 }
 
 
@@ -332,9 +364,9 @@ void Renderer::generateGrid(unsigned int quantX, unsigned int quantY, float delt
 {
     QVector3D point;
     int ind = 0;
-    for(unsigned int i = 0; i < quantX; i++)
+    for(unsigned int j = 0; j < quantY; j++)
     {
-        for(unsigned int j = 0; j < quantY; j++)
+        for(unsigned int i = 0; i < quantX; i++)
         {
             point = QVector3D(delta*i, delta*j, 0);
             _points.push_back(point);
@@ -342,5 +374,10 @@ void Renderer::generateGrid(unsigned int quantX, unsigned int quantY, float delt
             ind++;
         }
     }
+    _colors.resize(_points.size(), QVector3D(1,1,1));
+    _colors[22] = QVector3D(0,1,0);
+    _colors[25] = QVector3D(1,0,0);
+    _colors[44] = QVector3D(0,0,1);
+
 }
 
