@@ -4,5 +4,7 @@
         <file>GBfragmentShader.glsl</file>
         <file>vertexShader.glsl</file>
         <file>fragmentShader.glsl</file>
+        <file>JFAVertexShader.glsl</file>
+        <file>JFAFragmentShader.glsl</file>
     </qresource>
 </RCC>

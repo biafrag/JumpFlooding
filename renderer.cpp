@@ -67,6 +67,26 @@ void Renderer::initializeGL()
 
     createVAO();
 
+    //Programa do JFA
+
+    //Parte do frameBuffer
+    _programJFA = new QOpenGLShaderProgram();
+
+    //Adicionando shaders ao programa
+
+    _programJFA->addShaderFromSourceFile(QOpenGLShader::Vertex, ":/shaders/JFAVertexShader.glsl");
+    _programJFA->addShaderFromSourceFile(QOpenGLShader::Fragment, ":/shaders/JFAFragmentShader.glsl");
+
+    //Linka shaders que foram adicionados ao programa
+    _programJFA->link();
+
+    if (!_programJFA->isLinked())
+    {
+        std::cout<<"Problemas ao linkar shaders de Gbuffer"<<std::endl;
+    }
+
+    _programJFA->bind();
+
     _programQuad = new QOpenGLShaderProgram();
     //Adicionando shaders ao programa
 
@@ -124,14 +144,39 @@ void Renderer::paintGL()
 
      glDrawElements(GL_POINTS, static_cast<GLsizei>(_indexPoints.size()), GL_UNSIGNED_INT, nullptr);
 
-//         glBindFramebuffer(GL_FRAMEBUFFER, _gBuffer);
-//         glReadBuffer(GL_COLOR_ATTACHMENT0);
-//         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-//         glBlitFramebuffer(0, 0,  width(), height(),
-//                           0, 0, width(), height(),
-//                           GL_COLOR_BUFFER_BIT, GL_NEAREST);
+//     glBindFramebuffer(GL_FRAMEBUFFER, _gBuffer);
+//     glReadBuffer(GL_COLOR_ATTACHMENT0);
+//     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+//     glBlitFramebuffer(0, 0,  width(), height(),
+//                       0, 0, width(), height(),
+//                       GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
-//         return;
+//     return;
+
+     //Passada do JFA
+     _programJFA->bind();
+     _vao2.bind();
+     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+     glViewport(0, 0, width(), height());
+     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+     //Ativar e linkar a textura de tangente
+     glActiveTexture(GL_TEXTURE0);
+     glBindTexture(GL_TEXTURE_2D, _gSeeds);
+     unsigned int gSeedsLocation = glGetUniformLocation(_programJFA->programId(), "gSeeds");
+     glUniform1i(gSeedsLocation, 0);
+
+     glDrawArrays(GL_TRIANGLES, 0, (int)_pointsScreen.size());
+
+
+//          glBindFramebuffer(GL_FRAMEBUFFER, _gBuffer);
+//          glReadBuffer(GL_COLOR_ATTACHMENT1);
+//          glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+//          glBlitFramebuffer(0, 0,  width(), height(),
+//                            0, 0, width(), height(),
+//                            GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+//          return;
 
       //SEGUNDA PASSADA
      //Dando bind no programa e no vao
@@ -154,8 +199,8 @@ void Renderer::paintGL()
 
      //Ativar e linkar a textura de tangente
      glActiveTexture(GL_TEXTURE0);
-     glBindTexture(GL_TEXTURE_2D, _gSeeds);
-     unsigned int gSeedsLocation = glGetUniformLocation(_programQuad->programId(), "gSeeds");
+     glBindTexture(GL_TEXTURE_2D, _gSeeds2);
+     gSeedsLocation = glGetUniformLocation(_programQuad->programId(), "gSeeds");
      glUniform1i(gSeedsLocation, 0);
      glDrawArrays(GL_TRIANGLES, 0, (int)_pointsScreen.size());
 
@@ -248,8 +293,16 @@ void Renderer::createFrameBuffer()
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _gSeeds, 0);
 
-        unsigned int attachments[1] = { GL_COLOR_ATTACHMENT0};
-        glDrawBuffers(1, attachments);
+
+        glGenTextures(1, &_gSeeds2);
+        glBindTexture(GL_TEXTURE_2D, _gSeeds2);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width() , height(), 0, GL_RGB, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, _gSeeds2, 0);
+
+        unsigned int attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
+        glDrawBuffers(2, attachments);
 
 
         if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
@@ -267,6 +320,9 @@ void Renderer::updateFrameBuffer()
     w = _max.x() - _min.x();
     h = _max.y() - _min.y();
     glBindTexture(GL_TEXTURE_2D, _gSeeds);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width() , height(), 0, GL_RGB, GL_FLOAT, NULL);
+
+    glBindTexture(GL_TEXTURE_2D, _gSeeds2);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width() , height(), 0, GL_RGB, GL_FLOAT, NULL);
 }
 

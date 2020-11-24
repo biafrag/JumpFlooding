@@ -46,6 +46,7 @@ private:
     //Parte do GBuffer
     unsigned int _gBuffer;
     unsigned int _gSeeds;
+    unsigned int _gSeeds2;
 
     unsigned int _pointsBuffer = static_cast<unsigned int>(-1);
     unsigned int _pointsScreenBuffer = static_cast<unsigned int>(-1);
@@ -57,6 +58,8 @@ private:
     QOpenGLShaderProgram* _programGB{nullptr};
 
     QOpenGLShaderProgram* _programQuad{nullptr};
+    QOpenGLShaderProgram* _programJFA{nullptr};
+
 
     void createFrameBuffer();
     void updateFrameBuffer();
