@@ -112,6 +112,7 @@ void Renderer::resizeGL(int w, int h)
 {
     //Atualizar a viewport
     glViewport(0,0,w,h);
+    updateFrameBuffer();
 }
 
 
@@ -158,7 +159,7 @@ void Renderer::paintGL()
 
      int gSeedsLocationRead = 1;
      unsigned int gSeedsLocation;
-     //for(int i = 0; i < 1; i++)
+     for(int i = 0; i < 3; i++)
      {
          _programJFA->setUniformValue("read", gSeedsLocationRead);
 
@@ -168,10 +169,10 @@ void Renderer::paintGL()
          gSeedsLocation = glGetUniformLocation(_programJFA->programId(), "gSeedsSampler");
          glUniform1i(gSeedsLocation, 0);
 
-//         glActiveTexture(GL_TEXTURE1);
-//         glBindTexture(GL_TEXTURE_2D, _gSeeds2);
-//         gSeedsLocation = glGetUniformLocation(_programJFA->programId(), "gSeedsSampler2");
-//         glUniform1i(gSeedsLocation, 1);
+         glActiveTexture(GL_TEXTURE1);
+         glBindTexture(GL_TEXTURE_2D, _gSeeds2);
+         gSeedsLocation = glGetUniformLocation(_programJFA->programId(), "gSeedsSampler2");
+         glUniform1i(gSeedsLocation, 1);
 
 //         glActiveTexture(GL_TEXTURE1);
 //         glBindTexture(GL_TEXTURE_2D, _gColors);
@@ -193,7 +194,7 @@ void Renderer::paintGL()
 
 
           glBindFramebuffer(GL_FRAMEBUFFER, _gBuffer);
-          glReadBuffer(GL_COLOR_ATTACHMENT1);
+          glReadBuffer(GL_COLOR_ATTACHMENT2);
           glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
           glBlitFramebuffer(0, 0,  width(), height(),
                             0, 0, width(), height(),
