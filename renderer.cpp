@@ -125,7 +125,7 @@ void Renderer::paintGL()
      _vao.bind();
      glBindFramebuffer(GL_FRAMEBUFFER, _gBuffer);
      glViewport(0, 0, width(), height());
-     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+     //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
       _proj.setToIdentity();
       float left = _min.x() - 10;
@@ -141,7 +141,7 @@ void Renderer::paintGL()
      glDrawElements(GL_POINTS, static_cast<GLsizei>(_indexPoints.size()), GL_UNSIGNED_INT, nullptr);
 
 //     glBindFramebuffer(GL_FRAMEBUFFER, _gBuffer);
-//     glReadBuffer(GL_COLOR_ATTACHMENT2);
+//     glReadBuffer(GL_COLOR_ATTACHMENT3);
 //     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 //     glBlitFramebuffer(0, 0,  width(), height(),
 //                       0, 0, width(), height(),
@@ -159,7 +159,7 @@ void Renderer::paintGL()
 
      int gSeedsLocationRead = 1;
      unsigned int gSeedsLocation;
-     for(int i = 0; i < 3; i++)
+     for(int i = 0; i < 2; i++)
      {
          _programJFA->setUniformValue("read", gSeedsLocationRead);
 
@@ -174,10 +174,15 @@ void Renderer::paintGL()
          gSeedsLocation = glGetUniformLocation(_programJFA->programId(), "gSeedsSampler2");
          glUniform1i(gSeedsLocation, 1);
 
-//         glActiveTexture(GL_TEXTURE1);
-//         glBindTexture(GL_TEXTURE_2D, _gColors);
-//         unsigned int gColorsLocation = glGetUniformLocation(_programJFA->programId(), "gColors");
-//         glUniform1i(gColorsLocation, 1);
+         glActiveTexture(GL_TEXTURE2);
+         glBindTexture(GL_TEXTURE_2D, _gColors);
+         gSeedsLocation = glGetUniformLocation(_programJFA->programId(), "gColorsSampler");
+         glUniform1i(gSeedsLocation, 2);
+
+         glActiveTexture(GL_TEXTURE3);
+         glBindTexture(GL_TEXTURE_2D, _gColors2);
+         gSeedsLocation = glGetUniformLocation(_programJFA->programId(), "gColorsSampler2");
+         glUniform1i(gSeedsLocation, 3);
 
          glDrawArrays(GL_TRIANGLES, 0, (int)_pointsScreen.size());
 
@@ -194,7 +199,7 @@ void Renderer::paintGL()
 
 
           glBindFramebuffer(GL_FRAMEBUFFER, _gBuffer);
-          glReadBuffer(GL_COLOR_ATTACHMENT2);
+          glReadBuffer(GL_COLOR_ATTACHMENT1);
           glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
           glBlitFramebuffer(0, 0,  width(), height(),
                             0, 0, width(), height(),
@@ -333,8 +338,15 @@ void Renderer::createFrameBuffer()
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, _gSeeds2, 0);
 
-        unsigned int attachments[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
-        glDrawBuffers(3, attachments);
+        glGenTextures(1, &_gColors2);
+        glBindTexture(GL_TEXTURE_2D, _gColors2);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width() , height(), 0, GL_RGB, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, _gColors2, 0);
+
+        unsigned int attachments[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3};
+        glDrawBuffers(4, attachments);
 
 
         if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
@@ -356,6 +368,9 @@ void Renderer::updateFrameBuffer()
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width() , height(), 0, GL_RGB, GL_FLOAT, NULL);
 
     glBindTexture(GL_TEXTURE_2D, _gColors);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width() , height(), 0, GL_RGB, GL_FLOAT, NULL);
+
+    glBindTexture(GL_TEXTURE_2D, _gColors2);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width() , height(), 0, GL_RGB, GL_FLOAT, NULL);
 }
 

@@ -49,6 +49,7 @@ private:
     unsigned int _gSeeds;
     unsigned int _gColors;
     unsigned int _gSeeds2;
+    unsigned int _gColors2;
 
     unsigned int _pointsBuffer = static_cast<unsigned int>(-1);
     unsigned int _colorsBuffer = static_cast<unsigned int>(-1);
