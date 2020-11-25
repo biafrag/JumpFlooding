@@ -67,4 +67,5 @@ private:
 
     void createFrameBuffer();
     void updateFrameBuffer();
+    bool _desenha = true;
 };

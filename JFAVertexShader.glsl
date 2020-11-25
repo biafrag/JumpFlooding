@@ -9,6 +9,8 @@ uniform vec3 min;
 uniform vec3 max;
 uniform mat4 mvp; //Matriz model view projection
 
+out vec3 fragMin;
+out vec3 fragMax;
 void main()
 {
     //Posição do vértice no espaço de projeção
@@ -22,6 +24,8 @@ void main()
     //UV = (vPos.xy + vec2(1,1))/2.0;
 
     fragPos = vPos;
+    fragMin = min;
+    fragMax = max;
 
     //UV = mvp * vec4(vPos.xy,1);
 }
