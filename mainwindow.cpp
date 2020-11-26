@@ -6,7 +6,8 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    //ui->openGLWidget->setFixedSize(256,256);
+    ui->openGLWidget->setFixedSize(1200,800);
+    setFixedSize(1220,800);
 }
 
 MainWindow::~MainWindow()

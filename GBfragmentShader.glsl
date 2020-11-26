@@ -8,6 +8,6 @@ uniform vec3 min;
 uniform vec3 max;
 void main()
 {
-    gSeeds = (fragPos - min) / (max - min); //Passando informação de posição para buffer
+    gSeeds = (fragPos - min) / (max - min); //Guardando info de posição no espaço de (0,1)
     gColors = fragColor;
 }

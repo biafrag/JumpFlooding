@@ -24,6 +24,14 @@ public:
     void generateGrid(unsigned int quantX, unsigned int quantY, float delta);
     void reconstructFBO();
 
+    enum MODE
+    {
+        SIMPLE_JFA,
+        JFA_1,
+        JFA_2_1,
+        JFA_QUAD
+    };
+
 private:
 
     void findMinMax();
@@ -65,8 +73,20 @@ private:
     QOpenGLShaderProgram* _programQuad{nullptr};
     QOpenGLShaderProgram* _programJFA{nullptr};
 
+    void preStep();
+    void JFA();
+    void JFA_Passo_1();
+    void JFA_Passo_2E1();
+    void JFA_Quad();
+
+    void show();
 
     void createFrameBuffer();
     void updateFrameBuffer();
+
+    int _readStatus = 1;
     bool _desenha = true;
+    int _step = 0;
+
+    MODE _mode;
 };

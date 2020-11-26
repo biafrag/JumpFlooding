@@ -11,9 +11,8 @@ uniform sampler2D gColorsSampler; //Textura de Seeds 2
 uniform sampler2D gColorsSampler2; //Textura de Seeds 2
 uniform int pass;
 uniform int read;
-in vec3 fragMin;
-in vec3 fragMax;
-in vec2 UV; //Coordenadas de textura do quad
+uniform vec3 min;
+uniform vec3 max;
 float dist(vec2 p1, vec2 p2)
 {
     return sqrt((p1.x - p2.x) * (p1.x - p2.x) + (p1.y - p2.y) * (p1.y - p2.y));
@@ -21,6 +20,10 @@ float dist(vec2 p1, vec2 p2)
 
 void main()
 {
+    vec2 UV;
+    UV.x = (fragPos.x - min.x) / (max.x - min.x);
+    UV.y = (fragPos.y - min.y) / (max.y - min.y);
+
     if(read == 1)
     {
         vec3 seed = texture(gSeedsSampler, UV).rgb; //Passando informação de posição para buffer
@@ -30,11 +33,10 @@ void main()
         {
             for(int y = -pass; y <= pass; y = y + pass)
             {
-                //vec2 UVn =  UV.xy + vec2(x*dFdx(UV).x,y*dFdy(UV).y);
                 vec2 pos = fragPos.xy + vec2(x,y);
-                if((pos.x >= fragMin.x && pos.y >= fragMin.y) && (pos.x <= fragMax.x && pos.y <= fragMax.y))
+                if((pos.x >= min.x && pos.y >= min.y) && (pos.x <= max.x && pos.y <= max.y))
                 {
-                        vec2 UVn = (pos - fragMin.xy) / (fragMax.xy - fragMin.xy);
+                        vec2 UVn = (pos - min.xy) / (max.xy - min.xy);
                         vec3 seedN = texture(gSeedsSampler, UVn).rgb;
                         vec3 colorN = texture(gColorsSampler, UVn).rgb;
 
@@ -47,7 +49,7 @@ void main()
                             }
                             else
                             {
-                              if(dist(UV.xy, seedN.xy) <= dist(UV.xy,seed.xy))
+                              if(dist(UV.xy, seedN.xy) < dist(UV.xy,seed.xy))
                               {
                                    color = colorN;
                                    seed = seedN;
@@ -63,7 +65,7 @@ void main()
         gColors2 = color;
         gSeeds = texture(gSeedsSampler, UV).rgb;
         gColors =texture(gColorsSampler, UV).rgb;
-        //gColors2 = vec3(1,0,0);
+
     }
     else
     {
@@ -74,11 +76,10 @@ void main()
         {
             for(int y = -pass; y <= pass; y = y + pass)
             {
-                //vec2 UVn =  UV.xy + vec2(x*dFdx(UV).x,y*dFdy(UV).y);
                 vec2 pos = fragPos.xy + vec2(x,y);
-                if((pos.x >= fragMin.x && pos.y >= fragMin.y) && (pos.x <= fragMax.x && pos.y <= fragMax.y))
+                if((pos.x >= min.x && pos.y >= min.y) && (pos.x <= max.x && pos.y <= max.y))
                 {
-                        vec2 UVn = (pos - fragMin.xy) / (fragMax.xy - fragMin.xy);
+                        vec2 UVn = (pos - min.xy) / (max.xy - min.xy);
                         vec3 seedN = texture(gSeedsSampler, UVn).rgb;
                         vec3 colorN = texture(gColorsSampler, UVn).rgb;
 
@@ -91,7 +92,7 @@ void main()
                             }
                             else
                             {
-                                    if(dist(UV.xy, seedN.xy) <= dist(UV.xy,seed.xy))
+                                    if(dist(UV.xy, seedN.xy) < dist(UV.xy,seed.xy))
                                     {
                                          color = colorN;
                                          seed = seedN;
