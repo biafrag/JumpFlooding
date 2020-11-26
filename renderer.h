@@ -31,6 +31,8 @@ public:
         JFA_2_1,
         JFA_QUAD
     };
+    void setMode(MODE m);
+    void generatePoints(unsigned int n);
 
 private:
 
@@ -88,5 +90,5 @@ private:
     bool _desenha = true;
     int _step = 0;
 
-    MODE _mode;
+    MODE _mode = SIMPLE_JFA;
 };

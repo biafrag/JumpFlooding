@@ -28,7 +28,32 @@ Renderer::~Renderer()
 }
 
 
+void Renderer::generatePoints(unsigned int n)
+{
 
+    _colors.clear();
+    _colors.resize(_points.size(), QVector3D(1,1,1));
+    unsigned int LOx = _min.x();
+    unsigned int HIx = _max.x() - 1;
+
+    unsigned int LOy = _min.y();
+    unsigned int HIy = _max.y() - 1;
+
+    float LOC = 0;
+    float HIC = 1;
+
+    for(unsigned int i = 0; i < n; i++)
+    {
+        unsigned int x = LOx + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(HIx-LOx)));
+        unsigned int y = LOy + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(HIy-LOy)));
+        float R = LOC + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(HIC-LOC)));
+        float G = LOC + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(HIC-LOC)));
+        float B = LOC + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(HIC-LOC)));
+
+        _colors[x*y] = QVector3D(R,G,B);
+    }
+
+}
 void Renderer::initializeGL()
 {
 
@@ -45,7 +70,6 @@ void Renderer::initializeGL()
 
     generateGrid(220,220,1);
     _pointsScreen = _points;
-    findMinMax();
 
     createFrameBuffer();
 
@@ -117,7 +141,7 @@ void Renderer::resizeGL(int w, int h)
     //Atualizar a viewport
     glViewport(0,0,w,h);
     //printf("Width: %d, Height: %d", w, h);
-    updateFrameBuffer();
+    //updateFrameBuffer();
 }
 
 
@@ -131,11 +155,37 @@ void Renderer::paintGL()
     //Passada do JFA
     JFA();
 
-    //Mais uma passada de JFA com passo 1
-    JFA_Passo_1();
+    if(_mode == SIMPLE_JFA)
+    {
+        show();
+        return;
+    }
+
+    else if(_mode == JFA_1)
+    {
+        //Mais uma passada de JFA com passo 1
+        JFA_Passo_1();
+        show();
+        return;
+    }
+
+    else if(_mode == JFA_2_1)
+    {
+        //Mais uma passada de JFA com passo 1
+        JFA_Passo_2E1();
+        show();
+        return;
+    }
+
+    else if(_mode == JFA_QUAD)
+    {
+        //Mais uma passada de JFA com passo 1
+        JFA();
+        show();
+        return;
+    }
 
 
-    show();
 
 ////      //SEGUNDA PASSADA
 ////     //Dando bind no programa e no vao
@@ -274,6 +324,8 @@ void Renderer::createVAO2()
 
 void Renderer::preStep()
 {
+    _readStatus = 1;
+
     //PRIMEIRA PASSADA
     _programGB->bind();
     _vao.bind();
@@ -312,7 +364,7 @@ void Renderer::JFA()
     _vao2.bind();
 
     unsigned int gSeedsLocation;
-    int n = _max.x() + 1;
+    int n = std::max(_max.x(),_max.y()) + 1;
 
     _proj.setToIdentity();
     float left = _min.x();
@@ -445,7 +497,55 @@ void Renderer::JFA_Passo_1()
 //                      0, 0, width(), height(),
 //                      GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
-//    return;
+    //    return;
+}
+
+
+
+void Renderer::JFA_Passo_2E1()
+{
+    unsigned int gSeedsLocation;
+
+    _programJFA->setUniformValue("read", _readStatus);
+
+    _programJFA->setUniformValue("pass", 2);
+
+
+    if(_readStatus == 1)
+    {
+        //Ativar e linkar a textura de tangente
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, _gSeeds);
+        gSeedsLocation = glGetUniformLocation(_programJFA->programId(), "gSeedsSampler");
+        glUniform1i(gSeedsLocation, 0);
+
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, _gColors);
+        gSeedsLocation = glGetUniformLocation(_programJFA->programId(), "gColorsSampler");
+        glUniform1i(gSeedsLocation, 1);
+
+        _readStatus = 2;
+    }
+    else
+    {
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, _gSeeds2);
+        gSeedsLocation = glGetUniformLocation(_programJFA->programId(), "gSeedsSampler2");
+        glUniform1i(gSeedsLocation, 0);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, _gColors2);
+        gSeedsLocation = glGetUniformLocation(_programJFA->programId(), "gColorsSampler2");
+        glUniform1i(gSeedsLocation, 1);
+
+
+        _readStatus = 1;
+    }
+    glDrawArrays(GL_POINTS, 0, (int)_pointsScreen.size());
+
+    JFA_Passo_1();
 }
 
 
@@ -541,8 +641,6 @@ void Renderer::updateFrameBuffer()
 
     glBindTexture(GL_TEXTURE_2D, _gColors2);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width() , height(), 0, GL_RGB, GL_FLOAT, NULL);
-
-    update();
 }
 
 
@@ -562,13 +660,15 @@ void Renderer::generateGrid(unsigned int quantX, unsigned int quantY, float delt
         }
     }
     _colors.resize(_points.size(), QVector3D(1,1,1));
+    findMinMax();
+
 //    _colors[22] = QVector3D(0,1,0);
 //    _colors[25] = QVector3D(1,0,0);
 //    _colors[44] = QVector3D(0,0,1);
 
 //    _colors[200] = QVector3D(1,0,1);
 
-    _colors[0] = QVector3D(1,0,0);
+//    _colors[0] = QVector3D(1,0,0);
 
     _colors[4800] = QVector3D(0,1,0);
 
@@ -582,6 +682,8 @@ void Renderer::generateGrid(unsigned int quantX, unsigned int quantY, float delt
 
     _colors[39998] = QVector3D(1,0,1);
 
+    generatePoints(60);
+
 }
 
 
@@ -594,5 +696,14 @@ void Renderer::reconstructFBO()
     glDeleteTextures(1, &_gColors2);
     glDeleteFramebuffers(1, &_gBuffer);
     createFrameBuffer();
+}
+
+
+
+void Renderer::setMode(Renderer::MODE m)
+{
+    _mode = m;
+
+    update();
 }
 
