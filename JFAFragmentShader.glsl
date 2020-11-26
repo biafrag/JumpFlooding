@@ -47,7 +47,7 @@ void main()
                             }
                             else
                             {
-                              if(dist(UV.xy, seedN.xy) < dist(UV.xy,seed.xy))
+                              if(dist(UV.xy, seedN.xy) <= dist(UV.xy,seed.xy))
                               {
                                    color = colorN;
                                    seed = seedN;
@@ -91,7 +91,7 @@ void main()
                             }
                             else
                             {
-                                    if(dist(UV.xy, seedN.xy) < dist(UV.xy,seed.xy))
+                                    if(dist(UV.xy, seedN.xy) <= dist(UV.xy,seed.xy))
                                     {
                                          color = colorN;
                                          seed = seedN;

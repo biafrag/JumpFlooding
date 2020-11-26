@@ -43,7 +43,7 @@ void Renderer::initializeGL()
     glDepthFunc(GL_LESS);
     glClearColor(0,0,0,1);
 
-    generateGrid(8,8,1);
+    generateGrid(128,128,1);
     _pointsScreen = _points;
     findMinMax();
 
@@ -140,8 +140,9 @@ void Renderer::paintGL()
       QMatrix4x4 mvp = _proj;
       _programGB->setUniformValue("mvp", mvp);
 
-
-     glDrawElements(GL_POINTS, static_cast<GLsizei>(_indexPoints.size()), GL_UNSIGNED_INT, nullptr);
+      _programGB->setUniformValue("min", _min);
+      _programGB->setUniformValue("max", _max);
+        glDrawElements(GL_POINTS, static_cast<GLsizei>(_indexPoints.size()), GL_UNSIGNED_INT, nullptr);
 
 //     glBindFramebuffer(GL_FRAMEBUFFER, _gBuffer);
 //     glReadBuffer(GL_COLOR_ATTACHMENT1);
@@ -162,7 +163,7 @@ void Renderer::paintGL()
 
      int gSeedsLocationRead = 1;
      unsigned int gSeedsLocation;
-     int n = 8;
+     int n = _max.x() + 1;
      //_programJFA->setUniformValue("min", QVector3D(0,0,0));
      //_programJFA->setUniformValue("max", QVector3D(width(),height(),0));
 
@@ -430,12 +431,18 @@ void Renderer::generateGrid(unsigned int quantX, unsigned int quantY, float delt
         }
     }
     _colors.resize(_points.size(), QVector3D(1,1,1));
-    _colors[22] = QVector3D(0,1,0);
-    _colors[25] = QVector3D(1,0,0);
-    _colors[44] = QVector3D(0,0,1);
-    //_colors[0] = QVector3D(1,0,0);
+//    _colors[22] = QVector3D(0,1,0);
+//    _colors[25] = QVector3D(1,0,0);
+//    _colors[44] = QVector3D(0,0,1);
+    _colors[0] = QVector3D(1,0,0);
 
+    _colors[4800] = QVector3D(0,1,0);
 
+    _colors[5600] = QVector3D(1,1,0);
+
+    _colors[8000] = QVector3D(1,0,1);
+
+    _colors[16000] = QVector3D(0,0,1);
 }
 
 
