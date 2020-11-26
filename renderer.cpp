@@ -430,9 +430,11 @@ void Renderer::generateGrid(unsigned int quantX, unsigned int quantY, float delt
         }
     }
     _colors.resize(_points.size(), QVector3D(1,1,1));
-    //_colors[22] = QVector3D(0,1,0);
+    _colors[22] = QVector3D(0,1,0);
     _colors[25] = QVector3D(1,0,0);
-   // _colors[44] = QVector3D(0,0,1);
+    _colors[44] = QVector3D(0,0,1);
+    //_colors[0] = QVector3D(1,0,0);
+
 
 }
 

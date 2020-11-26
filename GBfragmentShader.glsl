@@ -8,6 +8,6 @@ in vec3 fragColor; // Posição no espaço do olho
 
 void main()
 {
-    gSeeds = fragPos; //Passando informação de posição para buffer
+    gSeeds = (fragPos - vec3(0,0,0)) / (vec3(7,7,0) - vec3(0,0,0)); //Passando informação de posição para buffer
     gColors = fragColor;
 }

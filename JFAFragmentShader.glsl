@@ -32,7 +32,7 @@ void main()
             {
                 //vec2 UVn =  UV.xy + vec2(x*dFdx(UV).x,y*dFdy(UV).y);
                 vec2 pos = fragPos.xy + vec2(x,y);
-                if((pos.x > fragMin.x && pos.y > fragMin.y) && (pos.x < fragMax.x && pos.y < fragMax.y))
+                if((pos.x >= fragMin.x && pos.y >= fragMin.y) && (pos.x <= fragMax.x && pos.y <= fragMax.y))
                 {
                         vec2 UVn = (pos - fragMin.xy) / (fragMax.xy - fragMin.xy);
                         vec3 seedN = texture(gSeedsSampler, UVn).rgb;
@@ -47,7 +47,7 @@ void main()
                             }
                             else
                             {
-                              if(dist(UV, seedN.xy) < dist(UV,seed.xy))
+                              if(dist(UV.xy, seedN.xy) < dist(UV.xy,seed.xy))
                               {
                                    color = colorN;
                                    seed = seedN;
@@ -76,7 +76,7 @@ void main()
             {
                 //vec2 UVn =  UV.xy + vec2(x*dFdx(UV).x,y*dFdy(UV).y);
                 vec2 pos = fragPos.xy + vec2(x,y);
-                if((pos.x > fragMin.x && pos.y > fragMin.y) && (pos.x < fragMax.x && pos.y < fragMax.y))
+                if((pos.x >= fragMin.x && pos.y >= fragMin.y) && (pos.x <= fragMax.x && pos.y <= fragMax.y))
                 {
                         vec2 UVn = (pos - fragMin.xy) / (fragMax.xy - fragMin.xy);
                         vec3 seedN = texture(gSeedsSampler, UVn).rgb;
@@ -91,8 +91,7 @@ void main()
                             }
                             else
                             {
-
-                                    if(dist(UV, seedN.xy) < dist(UV,seed.xy))
+                                    if(dist(UV.xy, seedN.xy) < dist(UV.xy,seed.xy))
                                     {
                                          color = colorN;
                                          seed = seedN;
@@ -110,7 +109,6 @@ void main()
         gColors = color;
         gSeeds2 = texture(gSeedsSampler2, UV).rgb;
         gColors2 = texture(gColorsSampler2, UV).rgb;
-        //gColors = vec3(1,0,0);
     }
 
 }
