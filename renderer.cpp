@@ -171,30 +171,21 @@ void Renderer::paintGL()
 
      _programGB->setUniformValue("mvp", mvp);
 
+     glActiveTexture(GL_TEXTURE0);
+     glBindTexture(GL_TEXTURE_2D, _gSeeds);
 
-     for(int p = n/2; p >= 2; p = p/2)
+     glActiveTexture(GL_TEXTURE1);
+     glBindTexture(GL_TEXTURE_2D, _gSeeds2);
+
+     glActiveTexture(GL_TEXTURE2);
+     glBindTexture(GL_TEXTURE_2D, _gColors);
+
+     glActiveTexture(GL_TEXTURE3);
+     glBindTexture(GL_TEXTURE_2D, _gColors2);
+     for(int p = n/2; p >= 1; p = p/2)
      {
 
-         //Ativar e linkar a textura de tangente
-         glActiveTexture(GL_TEXTURE0);
-         glBindTexture(GL_TEXTURE_2D, _gSeeds);
-         gSeedsLocation = glGetUniformLocation(_programJFA->programId(), "gSeedsSampler");
-         glUniform1i(gSeedsLocation, 0);
 
-         glActiveTexture(GL_TEXTURE1);
-         glBindTexture(GL_TEXTURE_2D, _gSeeds2);
-         gSeedsLocation = glGetUniformLocation(_programJFA->programId(), "gSeedsSampler2");
-         glUniform1i(gSeedsLocation, 1);
-
-         glActiveTexture(GL_TEXTURE2);
-         glBindTexture(GL_TEXTURE_2D, _gColors);
-         gSeedsLocation = glGetUniformLocation(_programJFA->programId(), "gColorsSampler");
-         glUniform1i(gSeedsLocation, 2);
-
-         glActiveTexture(GL_TEXTURE3);
-         glBindTexture(GL_TEXTURE_2D, _gColors2);
-         gSeedsLocation = glGetUniformLocation(_programJFA->programId(), "gColorsSampler2");
-         glUniform1i(gSeedsLocation, 3);
          _programJFA->setUniformValue("read", gSeedsLocationRead);
 
          _programJFA->setUniformValue("pass", p);
@@ -202,11 +193,33 @@ void Renderer::paintGL()
 
          if(gSeedsLocationRead == 1)
          {
+             //Ativar e linkar a textura de tangente
+             glActiveTexture(GL_TEXTURE0);
+             glBindTexture(GL_TEXTURE_2D, _gSeeds);
+             gSeedsLocation = glGetUniformLocation(_programJFA->programId(), "gSeedsSampler");
+             glUniform1i(gSeedsLocation, 0);
+
+
+             glActiveTexture(GL_TEXTURE1);
+             glBindTexture(GL_TEXTURE_2D, _gColors);
+             gSeedsLocation = glGetUniformLocation(_programJFA->programId(), "gColorsSampler");
+             glUniform1i(gSeedsLocation, 1);
 
              gSeedsLocationRead = 2;
          }
          else
          {
+
+             glActiveTexture(GL_TEXTURE0);
+             glBindTexture(GL_TEXTURE_2D, _gSeeds2);
+             gSeedsLocation = glGetUniformLocation(_programJFA->programId(), "gSeedsSampler2");
+             glUniform1i(gSeedsLocation, 0);
+
+             glActiveTexture(GL_TEXTURE1);
+             glBindTexture(GL_TEXTURE_2D, _gColors2);
+             gSeedsLocation = glGetUniformLocation(_programJFA->programId(), "gColorsSampler2");
+             glUniform1i(gSeedsLocation, 1);
+
 
              gSeedsLocationRead = 1;
          }
@@ -216,13 +229,14 @@ void Renderer::paintGL()
 
 
           glBindFramebuffer(GL_FRAMEBUFFER, _gBuffer);
-          glReadBuffer(GL_COLOR_ATTACHMENT1);
+          glReadBuffer(GL_COLOR_ATTACHMENT3);
           glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
           glBlitFramebuffer(0, 0,  width(), height(),
                             0, 0, width(), height(),
                             GL_COLOR_BUFFER_BIT, GL_NEAREST);
          //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         //updateFrameBuffer();
+         //reconstructFBO();
          //update();
           //return;
 
@@ -420,5 +434,17 @@ void Renderer::generateGrid(unsigned int quantX, unsigned int quantY, float delt
     _colors[25] = QVector3D(1,0,0);
    // _colors[44] = QVector3D(0,0,1);
 
+}
+
+
+
+void Renderer::reconstructFBO()
+{
+    glDeleteTextures(1, &_gSeeds);
+    glDeleteTextures(1, &_gSeeds2);
+    glDeleteTextures(1, &_gColors);
+    glDeleteTextures(1, &_gColors2);
+    glDeleteFramebuffers(1, &_gBuffer);
+    createFrameBuffer();
 }
 

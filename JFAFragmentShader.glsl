@@ -61,8 +61,8 @@ void main()
 
         gSeeds2 = seed;
         gColors2 = color;
-        //gSeeds = texture(gSeedsSampler, UV).rgb;
-        //gColors =texture(gColorsSampler, UV).rgb;
+        gSeeds = texture(gSeedsSampler, UV).rgb;
+        gColors =texture(gColorsSampler, UV).rgb;
         //gColors2 = vec3(1,0,0);
     }
     else
@@ -108,8 +108,8 @@ void main()
 
         gSeeds = seed;
         gColors = color;
-        //gSeeds2 = texture(gSeedsSampler2, UV).rgb;
-        //gColors2 = texture(gColorsSampler2, UV).rgb;
+        gSeeds2 = texture(gSeedsSampler2, UV).rgb;
+        gColors2 = texture(gColorsSampler2, UV).rgb;
         //gColors = vec3(1,0,0);
     }
 

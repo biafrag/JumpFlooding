@@ -22,6 +22,7 @@ public:
     void paintGL() override;
 
     void generateGrid(unsigned int quantX, unsigned int quantY, float delta);
+    void reconstructFBO();
 
 private:
 
