@@ -37,3 +37,8 @@ void MainWindow::on_radioButton_4_clicked()
     ui->openGLWidget->setMode(Renderer::MODE::JFA_QUAD);
 
 }
+
+void MainWindow::on_spinBox_valueChanged(int arg1)
+{
+    ui->openGLWidget->generatePoints(arg1);
+}

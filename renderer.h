@@ -32,6 +32,7 @@ public:
         JFA_QUAD
     };
     void setMode(MODE m);
+    void setSteps(int );
     void generatePoints(unsigned int n);
 
 private:

@@ -49,10 +49,14 @@ void Renderer::generatePoints(unsigned int n)
         float R = LOC + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(HIC-LOC)));
         float G = LOC + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(HIC-LOC)));
         float B = LOC + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(HIC-LOC)));
+       // float B = 1;
+
 
         _colors[x*y] = QVector3D(R,G,B);
     }
-
+    glBindBuffer(GL_ARRAY_BUFFER, _colorsBuffer);
+    glBufferData(GL_ARRAY_BUFFER, _colors.size()*sizeof(QVector3D), &_colors[0], GL_STATIC_DRAW);
+    update();
 }
 void Renderer::initializeGL()
 {
@@ -152,6 +156,11 @@ void Renderer::paintGL()
     //Passo de passada para construção de texturas iniciais
     preStep();
 
+//    if(_step == 0)
+//    {
+//        show();
+//        return;
+//    }
     //Passada do JFA
     JFA();
 
