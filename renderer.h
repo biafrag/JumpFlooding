@@ -32,7 +32,7 @@ public:
         JFA_QUAD
     };
     void setMode(MODE m);
-    void setSteps(int );
+    void setStep(int step);
     void generatePoints(unsigned int n);
 
 private:
@@ -45,6 +45,7 @@ private:
     QOpenGLShaderProgram* _program{nullptr};
     QOpenGLVertexArrayObject _vao;
     QOpenGLVertexArrayObject _vao2;
+    QOpenGLVertexArrayObject _vao3;
 
     //QOpenGLBuffer _pointsBuffer;
 
@@ -52,6 +53,7 @@ private:
     QVector3D _max;
     std::vector<QVector3D> _points;
     std::vector<QVector3D> _colors;
+    std::vector<QVector3D> _seeds;
     std::vector<QVector3D> _pointsScreen;
     std::vector<unsigned int> _indexPoints;
 
@@ -66,11 +68,14 @@ private:
     unsigned int _pointsBuffer = static_cast<unsigned int>(-1);
     unsigned int _colorsBuffer = static_cast<unsigned int>(-1);
     unsigned int _pointsScreenBuffer = static_cast<unsigned int>(-1);
+    unsigned int _seedsBuffer = static_cast<unsigned int>(-1);
     unsigned int _meshBuffer = static_cast<unsigned int>(-1);
 
 private:
     void createVAO(); //Cria VAO
     void createVAO2(); //Cria VAO2
+    void createVAO3(); //Cria VAO2
+
     QOpenGLShaderProgram* _programGB{nullptr};
 
     QOpenGLShaderProgram* _programQuad{nullptr};
@@ -81,6 +86,7 @@ private:
     void JFA_Passo_1();
     void JFA_Passo_2E1();
     void JFA_Quad();
+    void drawSeeds();
 
     void show();
 
@@ -89,7 +95,8 @@ private:
 
     int _readStatus = 1;
     bool _desenha = true;
-    int _step = 0;
+    int _step = 1;
+    bool _isSecondTime = false;
 
     MODE _mode = SIMPLE_JFA;
 };

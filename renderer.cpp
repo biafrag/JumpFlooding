@@ -32,30 +32,33 @@ void Renderer::generatePoints(unsigned int n)
 {
 
     _colors.clear();
+    _seeds.clear();
     _colors.resize(_points.size(), QVector3D(1,1,1));
-    unsigned int LOx = _min.x();
-    unsigned int HIx = _max.x() - 1;
-
-    unsigned int LOy = _min.y();
-    unsigned int HIy = _max.y() - 1;
+    unsigned int LO = 0;
+    unsigned int HI = _points.size() - 1;
 
     float LOC = 0;
     float HIC = 1;
 
     for(unsigned int i = 0; i < n; i++)
     {
-        unsigned int x = LOx + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(HIx-LOx)));
-        unsigned int y = LOy + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(HIy-LOy)));
+        //unsigned int x = LOx + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(HIx-LOx)));
+        //unsigned int ind = LO + static_cast <unsigned int > (rand()) /( static_cast <unsigned int > (RAND_MAX/(HI-LO)));
         float R = LOC + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(HIC-LOC)));
         float G = LOC + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(HIC-LOC)));
         float B = LOC + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(HIC-LOC)));
        // float B = 1;
+        int ind = rand()%(HI-LO + 1) + LO;
 
 
-        _colors[x*y] = QVector3D(R,G,B);
+        _colors[ind] = QVector3D(R,G,B);
+        _seeds.push_back(_points[ind]);
     }
     glBindBuffer(GL_ARRAY_BUFFER, _colorsBuffer);
     glBufferData(GL_ARRAY_BUFFER, _colors.size()*sizeof(QVector3D), &_colors[0], GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ARRAY_BUFFER, _seedsBuffer);
+    glBufferData(GL_ARRAY_BUFFER, _seeds.size()*sizeof(QVector3D), &_seeds[0], GL_STATIC_DRAW);
     update();
 }
 void Renderer::initializeGL()
@@ -72,7 +75,7 @@ void Renderer::initializeGL()
     glDepthFunc(GL_LESS);
     glClearColor(0,0,0,1);
 
-    generateGrid(220,220,1);
+    generateGrid(132,120,1);
     _pointsScreen = _points;
 
     createFrameBuffer();
@@ -134,7 +137,7 @@ void Renderer::initializeGL()
     _programQuad->bind();
 
     createVAO2();
-
+    createVAO3();
 
 }
 
@@ -145,7 +148,7 @@ void Renderer::resizeGL(int w, int h)
     //Atualizar a viewport
     glViewport(0,0,w,h);
     //printf("Width: %d, Height: %d", w, h);
-    //updateFrameBuffer();
+    updateFrameBuffer();
 }
 
 
@@ -156,17 +159,18 @@ void Renderer::paintGL()
     //Passo de passada para construção de texturas iniciais
     preStep();
 
-//    if(_step == 0)
-//    {
-//        show();
-//        return;
-//    }
+    if(_step == 0)
+    {
+        show();
+        return;
+    }
     //Passada do JFA
     JFA();
 
     if(_mode == SIMPLE_JFA)
     {
         show();
+        drawSeeds();
         return;
     }
 
@@ -175,6 +179,8 @@ void Renderer::paintGL()
         //Mais uma passada de JFA com passo 1
         JFA_Passo_1();
         show();
+        drawSeeds();
+
         return;
     }
 
@@ -183,77 +189,20 @@ void Renderer::paintGL()
         //Mais uma passada de JFA com passo 1
         JFA_Passo_2E1();
         show();
+        drawSeeds();
+
         return;
     }
 
     else if(_mode == JFA_QUAD)
     {
         //Mais uma passada de JFA com passo 1
-        JFA();
+        JFA_Quad();
         show();
-        return;
+
+        drawSeeds();
     }
 
-
-
-////      //SEGUNDA PASSADA
-////     //Dando bind no programa e no vao
-//     _programQuad->bind();
-//     _vao2.bind();
-//     _programQuad->setUniformValue("read", gSeedsLocationRead);
-
-//     _programQuad->setUniformValue("min", _min);
-//     _programQuad->setUniformValue("max", _max);
-
-//     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-//     glDrawBuffer(GL_BACK);
-//     if(gSeedsLocationRead == 1)
-//     {
-
-//         //Ativar e linkar a textura de tangente
-//         glActiveTexture(GL_TEXTURE0);
-//         glBindTexture(GL_TEXTURE_2D, _gSeeds);
-//         gSeedsLocation = glGetUniformLocation(_programQuad->programId(), "gSeedsSampler");
-//         glUniform1i(gSeedsLocation, 0);
-
-
-//         glActiveTexture(GL_TEXTURE1);
-//         glBindTexture(GL_TEXTURE_2D, _gColors);
-//         gSeedsLocation = glGetUniformLocation(_programQuad->programId(), "gColorsSampler");
-//         glUniform1i(gSeedsLocation, 1);
-//     }
-//     else
-//     {
-
-//         glActiveTexture(GL_TEXTURE0);
-//         glBindTexture(GL_TEXTURE_2D, _gSeeds2);
-//         gSeedsLocation = glGetUniformLocation(_programQuad->programId(), "gSeedsSampler2");
-//         glUniform1i(gSeedsLocation, 0);
-
-//         glActiveTexture(GL_TEXTURE1);
-//         glBindTexture(GL_TEXTURE_2D, _gColors2);
-//         gSeedsLocation = glGetUniformLocation(_programQuad->programId(), "gColorsSampler2");
-//         glUniform1i(gSeedsLocation, 1);
-//     }
-//    // glViewport(0, 0, width(), height());
-////     glClear(GL_COLOR_BUFFER_BIT  | GL_DEPTH_BUFFER_BIT);
-
-////     _proj.setToIdentity();
-//////     left = -10;
-//////     right = 10;
-//////     bottom = -10;
-//////     up = 10;
-//////     _proj.ortho(left, right, bottom, up, 0, 100);
-
-//     _programQuad->setUniformValue("mvp", mvp);
-
-
-////     //Ativar e linkar a textura de tangente
-////     glActiveTexture(GL_TEXTURE0);
-////     glBindTexture(GL_TEXTURE_2D, _gSeeds2);
-////     gSeedsLocation = glGetUniformLocation(_programQuad->programId(), "gSeeds");
-////     glUniform1i(gSeedsLocation, 0);
-//     glDrawArrays(GL_POINTS, 0, (int)_pointsScreen.size());
 
 }
 
@@ -329,6 +278,20 @@ void Renderer::createVAO2()
     glEnableVertexAttribArray(2);
 }
 
+void Renderer::createVAO3()
+{
+    //Criando e configurando vao
+    _vao3.create();
+    _vao3.bind();
+
+    //Criando buffer de pontos dos vértices
+    glGenBuffers(1, &_seedsBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, _seedsBuffer);
+    glBufferData(GL_ARRAY_BUFFER, _seeds.size()*sizeof(QVector3D), &_seeds[0], GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+    glEnableVertexAttribArray(0);
+}
+
 
 
 void Renderer::preStep()
@@ -388,17 +351,6 @@ void Renderer::JFA()
 
     _programGB->setUniformValue("mvp", mvp);
 
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, _gSeeds);
-
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, _gSeeds2);
-
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, _gColors);
-
-    glActiveTexture(GL_TEXTURE3);
-    glBindTexture(GL_TEXTURE_2D, _gColors2);
     for(int p = n/2; p >= 1; p = p/2)
     {
 
@@ -557,6 +509,91 @@ void Renderer::JFA_Passo_2E1()
     JFA_Passo_1();
 }
 
+void Renderer::JFA_Quad()
+{
+
+    //Passada do JFA
+
+    unsigned int gSeedsLocation;
+    int n = std::max(_max.x(),_max.y()) + 1;
+
+    _proj.setToIdentity();
+    float left = _min.x();
+    float right = _max.x();
+    float bottom = _min.y() ;
+    float up = _max.y();
+
+    _proj.ortho(left, right, bottom, up, 0, 100);
+    QMatrix4x4 mvp = _proj;
+    _programJFA->setUniformValue("min", _min);
+    _programJFA->setUniformValue("max", _max);
+
+    _programGB->setUniformValue("mvp", mvp);
+
+    for(int p = n/2; p >= 1; p = p/2)
+    {
+
+
+        _programJFA->setUniformValue("read", _readStatus);
+
+        _programJFA->setUniformValue("pass", p);
+
+
+        if(_readStatus == 1)
+        {
+            //Ativar e linkar a textura de tangente
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, _gSeeds);
+            gSeedsLocation = glGetUniformLocation(_programJFA->programId(), "gSeedsSampler");
+            glUniform1i(gSeedsLocation, 0);
+
+
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, _gColors);
+            gSeedsLocation = glGetUniformLocation(_programJFA->programId(), "gColorsSampler");
+            glUniform1i(gSeedsLocation, 1);
+
+            _readStatus = 2;
+        }
+        else
+        {
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, _gSeeds2);
+            gSeedsLocation = glGetUniformLocation(_programJFA->programId(), "gSeedsSampler2");
+            glUniform1i(gSeedsLocation, 0);
+
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, _gColors2);
+            gSeedsLocation = glGetUniformLocation(_programJFA->programId(), "gColorsSampler2");
+            glUniform1i(gSeedsLocation, 1);
+
+
+            _readStatus = 1;
+        }
+        glDrawArrays(GL_POINTS, 0, (int)_pointsScreen.size());
+    }
+
+}
+
+
+
+void Renderer::drawSeeds()
+{
+    QMatrix4x4 mvp = _proj;
+    _programQuad->bind();
+    _vao3.bind();
+    glEnable(GL_POINT_SMOOTH);
+
+    makeCurrent();
+
+    _programQuad->setUniformValue("mvp", mvp);
+
+
+    glDrawArrays(GL_POINTS, 0, (int)_seeds.size());
+    glDisable(GL_POINT_SMOOTH);
+}
+
 
 
 void Renderer::show()
@@ -656,6 +693,9 @@ void Renderer::updateFrameBuffer()
 
 void Renderer::generateGrid(unsigned int quantX, unsigned int quantY, float delta)
 {
+    _points.clear();
+    _indexPoints.clear();
+
     QVector3D point;
     int ind = 0;
     for(unsigned int j = 0; j < quantY; j++)
@@ -679,20 +719,26 @@ void Renderer::generateGrid(unsigned int quantX, unsigned int quantY, float delt
 
 //    _colors[0] = QVector3D(1,0,0);
 
-    _colors[4800] = QVector3D(0,1,0);
+//    _colors[4800] = QVector3D(0,1,0);
 
-    _colors[5600] = QVector3D(1,1,0);
+//    _colors[5600] = QVector3D(1,1,0);
 
     //_colors[8000] = QVector3D(1,0,1);
 
-    _colors[9050] = QVector3D(0.2,0.7,0.5);
+//    _colors[9050] = QVector3D(0.2,0.7,0.5);
 
-    _colors[16000] = QVector3D(0,0,1);
+//    _colors[16000] = QVector3D(0,0,1);
 
-    _colors[39998] = QVector3D(1,0,1);
+//    _colors[39998] = QVector3D(1,0,1);
 
-    generatePoints(60);
 
+   //_colors[27664] = QVector3D(0,0,1);
+//   _colors[1540] = QVector3D(0,0,1);
+//   _seeds.push_back()
+
+   generatePoints(1);
+
+   //_colors[39998] = QVector3D(1,0,1);
 }
 
 
@@ -713,6 +759,14 @@ void Renderer::setMode(Renderer::MODE m)
 {
     _mode = m;
 
+    update();
+}
+
+
+
+void Renderer::setStep(int step)
+{
+    _step = step;
     update();
 }
 

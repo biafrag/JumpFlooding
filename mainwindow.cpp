@@ -7,8 +7,8 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    ui->openGLWidget->setFixedSize(1300,900);
-    setFixedSize(1320,900);
+   // ui->openGLWidget->setFixedSize(1300,900);
+    //setFixedSize(1320,900);
 }
 
 MainWindow::~MainWindow()
@@ -41,4 +41,9 @@ void MainWindow::on_radioButton_4_clicked()
 void MainWindow::on_spinBox_valueChanged(int arg1)
 {
     ui->openGLWidget->generatePoints(arg1);
+}
+
+void MainWindow::on_stepSlider_valueChanged(int value)
+{
+    ui->openGLWidget->setStep(value);
 }
