@@ -5,6 +5,7 @@
 #include<QOpenGLWidget>
 #include<QOpenGLShaderProgram>
 #include<QOpenGLBuffer>
+#include <chrono>
 
 Renderer::Renderer(QWidget* parent)
         :QOpenGLWidget(parent)
@@ -59,6 +60,8 @@ void Renderer::generatePoints(unsigned int n)
 
     glBindBuffer(GL_ARRAY_BUFFER, _seedsBuffer);
     glBufferData(GL_ARRAY_BUFFER, _seeds.size()*sizeof(QVector3D), &_seeds[0], GL_STATIC_DRAW);
+
+
     update();
 }
 void Renderer::initializeGL()
@@ -75,8 +78,8 @@ void Renderer::initializeGL()
     glDepthFunc(GL_LESS);
     glClearColor(0,0,0,1);
 
-    generateGrid(132,120,1);
-    _pointsScreen = _points;
+    generateGrid(200,128,1);
+//    _pointsScreen = _points;
 
     createFrameBuffer();
 
@@ -165,7 +168,12 @@ void Renderer::paintGL()
         return;
     }
     //Passada do JFA
+    auto start  = std::chrono::high_resolution_clock::now();
     JFA();
+    auto end = std::chrono::high_resolution_clock::now();
+    double time_taken = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+    //std::cout<<"Tempo levado: "<<time_taken<<"ns"<<std::endl;
+
 
     if(_mode == SIMPLE_JFA)
     {
@@ -178,6 +186,9 @@ void Renderer::paintGL()
     {
         //Mais uma passada de JFA com passo 1
         JFA_Passo_1();
+        //end = std::chrono::high_resolution_clock::now();
+        //std::cout<<"Tempo levado: "<<time_taken<<"ns"<<std::endl;
+
         show();
         drawSeeds();
 
@@ -188,6 +199,9 @@ void Renderer::paintGL()
     {
         //Mais uma passada de JFA com passo 1
         JFA_Passo_2E1();
+        end = std::chrono::high_resolution_clock::now();
+        std::cout<<"Tempo levado: "<<time_taken<<"ns"<<std::endl;
+
         show();
         drawSeeds();
 
@@ -273,7 +287,7 @@ void Renderer::createVAO2()
     //Criando buffer de pontos dos vértices
     glGenBuffers(1, &_pointsScreenBuffer);
     glBindBuffer(GL_ARRAY_BUFFER, _pointsScreenBuffer);
-    glBufferData(GL_ARRAY_BUFFER, _pointsScreen.size()*sizeof(QVector3D), &_pointsScreen[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, _points.size()*sizeof(QVector3D), &_points[0], GL_STATIC_DRAW);
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
     glEnableVertexAttribArray(2);
 }
@@ -392,17 +406,29 @@ void Renderer::JFA()
 
             _readStatus = 1;
         }
-        glDrawArrays(GL_POINTS, 0, (int)_pointsScreen.size());
+        glDrawArrays(GL_POINTS, 0, (int)_points.size());
+
+        glBindFramebuffer(GL_FRAMEBUFFER, _gBuffer);
+
     }
 
-//     glBindFramebuffer(GL_FRAMEBUFFER, _gBuffer);
-//     glReadBuffer(GL_COLOR_ATTACHMENT1);
-//     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-//     glBlitFramebuffer(0, 0,  width(), height(),
-//                       0, 0, width(), height(),
-//                       GL_COLOR_BUFFER_BIT, GL_NEAREST);
+//    if(_readStatus == 1)
+//    {
+//        glReadBuffer(GL_COLOR_ATTACHMENT1);
 
-//     return;
+//    }
+//    else
+//    {
+//        glReadBuffer(GL_COLOR_ATTACHMENT3);
+
+//    }
+//    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+//    glBlitFramebuffer(0, 0,  width(), height(),
+//                      0, 0, width(), height(),
+//                      GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+    //return;
+
 
 }
 
@@ -449,7 +475,7 @@ void Renderer::JFA_Passo_1()
 
         _readStatus = 1;
     }
-    glDrawArrays(GL_POINTS, 0, (int)_pointsScreen.size());
+    glDrawArrays(GL_POINTS, 0, (int)_points.size());
 
 //    glBindFramebuffer(GL_FRAMEBUFFER, _gBuffer);
 //    glReadBuffer(GL_COLOR_ATTACHMENT3);
@@ -504,7 +530,7 @@ void Renderer::JFA_Passo_2E1()
 
         _readStatus = 1;
     }
-    glDrawArrays(GL_POINTS, 0, (int)_pointsScreen.size());
+    glDrawArrays(GL_POINTS, 0, (int)_points.size());
 
     JFA_Passo_1();
 }
@@ -571,7 +597,7 @@ void Renderer::JFA_Quad()
 
             _readStatus = 1;
         }
-        glDrawArrays(GL_POINTS, 0, (int)_pointsScreen.size());
+        glDrawArrays(GL_POINTS, 0, (int)_points.size());
     }
 
 }
@@ -632,7 +658,9 @@ void Renderer::createFrameBuffer()
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width() , height(), 0, GL_RGB, GL_FLOAT, NULL);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _gSeeds, 0);
 
         glGenTextures(1, &_gColors);
@@ -640,7 +668,9 @@ void Renderer::createFrameBuffer()
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width() , height(), 0, GL_RGB, GL_FLOAT, NULL);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, _gColors, 0);
 
 
@@ -649,7 +679,9 @@ void Renderer::createFrameBuffer()
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width() , height(), 0, GL_RGB, GL_FLOAT, NULL);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, _gSeeds2, 0);
 
         glGenTextures(1, &_gColors2);
@@ -657,7 +689,9 @@ void Renderer::createFrameBuffer()
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width() , height(), 0, GL_RGB, GL_FLOAT, NULL);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, _gColors2, 0);
 
         unsigned int attachments[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3};
@@ -711,25 +745,37 @@ void Renderer::generateGrid(unsigned int quantX, unsigned int quantY, float delt
     _colors.resize(_points.size(), QVector3D(1,1,1));
     findMinMax();
 
-//    _colors[22] = QVector3D(0,1,0);
+    //_colors[22] = QVector3D(0,1,0);
 //    _colors[25] = QVector3D(1,0,0);
-//    _colors[44] = QVector3D(0,0,1);
+    //_colors[44] = QVector3D(0,0,1);
 
-//    _colors[200] = QVector3D(1,0,1);
+    //_colors[200] = QVector3D(1,0,0);
 
 //    _colors[0] = QVector3D(1,0,0);
 
-//    _colors[4800] = QVector3D(0,1,0);
+   // _colors[4800] = QVector3D(0,1,0);
 
-//    _colors[5600] = QVector3D(1,1,0);
+   // _colors[5600] = QVector3D(1,0,0);
 
-    //_colors[8000] = QVector3D(1,0,1);
+//    _colors[8000] = QVector3D(1,0,1);
 
-//    _colors[9050] = QVector3D(0.2,0.7,0.5);
+//    _colors[9050] = QVector3D(0,1,0);
 
-//    _colors[16000] = QVector3D(0,0,1);
+//    _colors[16200] = QVector3D(1,0,0);
 
-//    _colors[39998] = QVector3D(1,0,1);
+//    _colors[15877] = QVector3D(0,0,1);
+
+   // _colors[14000] = QVector3D(0.3,0.3,0.3);
+
+//    _colors[255] = QVector3D(1,1,0);
+
+//    _colors[0] = QVector3D(1,0,1);
+
+    //_colors[8383] = QVector3D(1,0,1);
+
+
+
+    //_colors[39998] = QVector3D(1,0,0);
 
 
    //_colors[27664] = QVector3D(0,0,1);

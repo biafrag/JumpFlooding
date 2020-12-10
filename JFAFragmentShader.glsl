@@ -42,21 +42,28 @@ void main()
 
                         if(colorN != vec3(1))
                         {
+                            //color = vec3(1,0,0);
+
                             if(color == vec3(1))
                             {
                                 color = colorN;
                                 seed = seedN;
+
                             }
                             else
                             {
+
                               if(dist(UV.xy, seedN.xy) < dist(UV.xy,seed.xy))
                               {
                                    color = colorN;
                                    seed = seedN;
                               }
+
                             }
                         }
+
                 }
+
 
             }
         }
